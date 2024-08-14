@@ -42,6 +42,8 @@ function realizar_commit() {
     local mensaje_commit="Actualización desde updater - versión $new_version - commit $numero_commit - $(date '+%Y-%m-%d %H:%M:%S')"
 
     git add ${nombre_plugin}".php"
+	git add"README.txt"
+    git add "version.txt"
 
     git commit -m "$mensaje_commit"
     if [[ $? -eq 0 ]]; then
@@ -106,11 +108,9 @@ PLUGIN_VERSION_CONSTANT=$(convertir_a_mayusculas_y_guiones_bajos "$cadena_origin
 
 # Función para actualizar la versión en example.php
 update_version_constant() {
+  local version="$1"
   local file="$PLUGIN_FILENAME"
   local version_file="version.txt"
-
-  # Leer la nueva versión
-  read version < "$version_file"
 
   # Crear la nueva línea con la versión actualizada
   line_to_insert="define($PLUGIN_VERSION_CONSTANT, '$version');"
@@ -254,6 +254,7 @@ update_version() {
         echo "Error al escribir la nueva versión en version.txt"
     fi
 
+    update_version_constant "$new_version"
     # Reemplazar la versión en el archivo del plugin
     sed -i "s/\(Version:\s*\)$current_version/\1$new_version/" "$plugin_file"
 
@@ -286,7 +287,7 @@ if [[ -z "$PLUGIN_FILE" ]]; then
     exit 1
 fi
 
-update_version_constant
+
 
 log "Archivo principal del plugin detectado: $PLUGIN_FILE"
 
