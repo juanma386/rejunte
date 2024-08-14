@@ -59,8 +59,13 @@ function realizar_commit() {
 function construir_zip_con_git() {
     local nombre_plugin=$1
     local new_version=$2
-    local destino="../${nombre_plugin}-v${new_version}.tar.gz"
-
+	local tmp_dir=$(mktemp -d);
+	local temp="${tmp_dir}/${nombre_plugin}"
+    local destino="${tmp_dir}/${nombre_plugin}.zip"
+	local rename="../${nombre_plugin}-v${new_version}.zip"
+			
+	$(mkdir -p ${temp});
+	
     # Verificar si el directorio .git existe
     if [ ! -d ".git" ]; then
         echo "Error: Este directorio no es un repositorio Git."
@@ -68,13 +73,25 @@ function construir_zip_con_git() {
     fi
 
     # Crear el archivo tar.gz usando Git
-    git archive --format=tar.gz -o "$destino" HEAD
+    git archive --format=zip -o "$destino" HEAD
     if [[ $? -eq 0 ]]; then
-        echo "Archivo empaquetado creado exitosamente: $destino"
+		echo "archivo construido correctamente"
     else
         echo "Error al crear el archivo empaquetado"
         return 1
     fi
+	if [ -d $directory ]; then 
+		  echo "Directorio construido correctamente";
+	fi 
+	
+	unziping=$(unzip "${destino}" -d "${temp}")
+	if [ unziping ];then 
+			echo "Descomprimido en directorio correctamente";
+	fi 
+	zipping=$(zip -r "${temp}" "${rename}")
+	if [ zipping ];then 
+			echo "Comprimido y empacado correctamente en $rename";
+	fi 
 }
 
 
@@ -259,8 +276,9 @@ update_version() {
     sed -i "s/\(Version:\s*\)$current_version/\1$new_version/" "$plugin_file"
 
     # Actualizar el archivo README.txt
-    sed -i "s/= $current_version =/= $new_version =/" README.txt
-    echo "* Versión actualizada de $current_version a $new_version en $plugin_file" >> README.txt
+    echo "== $new_version ==" >> README.txt
+    echo "* Update current $current_version to $new_version\n" >> README.txt
+	echo "* Issue news updates\n" >> README.txt
 
 
     # Ejemplo de uso de las funciones
