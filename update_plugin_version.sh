@@ -42,7 +42,7 @@ function realizar_commit() {
     local mensaje_commit="Actualización desde updater - versión $new_version - commit $numero_commit - $(date '+%Y-%m-%d %H:%M:%S')"
 
     git add ${nombre_plugin}".php"
-	git add"README.txt"
+	git add "README.txt"
     git add "version.txt"
 
     git commit -m "$mensaje_commit"
@@ -56,42 +56,66 @@ function realizar_commit() {
 
 
 # Función para construir un "zip" usando Git
+# Función para construir un "zip" usando Git
 function construir_zip_con_git() {
     local nombre_plugin=$1
     local new_version=$2
-	local tmp_dir=$(mktemp -d);
-	local temp="${tmp_dir}/${nombre_plugin}"
-    local destino="${tmp_dir}/${nombre_plugin}.zip"
-	local rename="../${nombre_plugin}-v${new_version}.zip"
-			
-	$(mkdir -p ${temp});
+    local tmp_dir=$(mktemp -d)
+	local directory_destine="${PWD}/../${nombre_plugin}-v${new_version}";
+    local destino="./${nombre_plugin}.zip"
+    local log_file="$(pwd)/activity_zip.log"
 	
+	if [ ! -f $log_file ];then
+		touch $log_file;
+		log "Archivo Log Construido: $log_file" 
+	fi
+
+	if [ ! -d $directory_destine ]; then 
+		destine_create=$(mkdir -p $directory_destine);
+		if [ -d $directory_destine ]; then 
+			log "Directorio construido: $directory_destine" 
+		else 
+			log "Directorio construido: $directory_destine"
+			return 1
+		fi
+	else 
+			log "Directorio existe: $directory_destine"
+	fi
+	
+    # Función auxiliar para registrar en el log
+    log() {
+		local log_file="$(pwd)/activity_zip.log"
+		local date=$(date +"%Y-%m-%d %H:%M:%S");
+        echo "${date} - $*" >> "${log_file}"
+    }
+
+    log "Inicio de la función construir_zip_con_git"
+    log "Parámetros: nombre_plugin=$nombre_plugin, new_version=$new_version"
+
     # Verificar si el directorio .git existe
     if [ ! -d ".git" ]; then
+        log "Error: Este directorio no es un repositorio Git."
         echo "Error: Este directorio no es un repositorio Git."
         return 1
     fi
 
-    # Crear el archivo tar.gz usando Git
+    # Crear el archivo ZIP inicial usando Git
+    log "Creando archivo ZIP inicial: $destino"
     git archive --format=zip -o "$destino" HEAD
-    if [[ $? -eq 0 ]]; then
-		echo "archivo construido correctamente"
-    else
-        echo "Error al crear el archivo empaquetado"
+    if [[ $? -ne 0 ]]; then
+        log "Error al crear el archivo ZIP inicial"
+        echo "Error al crear el archivo ZIP inicial"
         return 1
     fi
-	if [ -d $directory ]; then 
-		  echo "Directorio construido correctamente";
-	fi 
 	
-	unziping=$(unzip "${destino}" -d "${temp}")
-	if [ unziping ];then 
-			echo "Descomprimido en directorio correctamente";
-	fi 
-	zipping=$(zip -r "${temp}" "${rename}")
-	if [ zipping ];then 
-			echo "Comprimido y empacado correctamente en $rename";
-	fi 
+	mv $destino $directory_destine
+	if [[ $? -ne 0 ]]; then
+        log "Error al mover el archivo ZIP inicial"
+        echo "Error al mover el archivo ZIP inicial"
+        return 1
+    fi
+
+    echo "Archivo empaquetado creado exitosamente: $destino"
 }
 
 
@@ -277,8 +301,8 @@ update_version() {
 
     # Actualizar el archivo README.txt
     echo "== $new_version ==" >> README.txt
-    echo "* Update current $current_version to $new_version\n" >> README.txt
-	echo "* Issue news updates\n" >> README.txt
+    echo "* Update current $current_version to $new_version" >> README.txt
+	echo "* Issue news updates" >> README.txt
 
 
     # Ejemplo de uso de las funciones
